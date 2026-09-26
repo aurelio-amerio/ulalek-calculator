@@ -6,9 +6,10 @@ Status: draft for review
 ## Purpose
 
 A progressive web app (PWA) that answers one question at the table: with
-Ulalek, Fused Atrocity on the battlefield, a spell just cast, a known mana
-pool and a known set of trigger doublers, how many copies of that spell do I
-end up with if I spend all my colorless mana on Ulalek's trigger?
+Ulalek, Fused Atrocity on the battlefield, a spell just cast, a known amount
+of colorless mana and a known set of trigger doublers, how many copies of
+that spell can I end up with, and in what order do I have to do things to
+get that many?
 
 It runs on a PC for debugging and installs on an Android phone from GitHub
 Pages. It is built for one deck (see `deck-list.md`) but the card data is
@@ -31,7 +32,10 @@ designed so that new doublers can be added by editing one data file.
   or an extra Ulalek trigger put on the stack by something else (Abstruse
   Archaic copying it, or another Eldrazi spell cast in response, either a
   flash Eldrazi or an Eldrazi instant).
-- Output: the number of duplicates at the end of the combo.
+- Echoes of Eternity copies double each other, and distinct doublers
+  interact with each other. The model must get those interactions right.
+- Output: the maximum number of copies, and the exact order of play that
+  reaches it, so the user can explain the line to the other players.
 - The deck may change. Future doublers named so far: Roaming Throne,
   Strionic Resonator, Peter Parker's Camera, Delney, Streetwise Lookout.
   Rings of Brighthearth is explicitly out (it copies activated abilities,
@@ -45,7 +49,8 @@ designed so that new doublers can be added by editing one data file.
 | --- | --- |
 | Mana model | Fixed C budget entered by the user, net of every cost already paid. The app deducts nothing. Mana produced by the copies as they resolve is ignored (see Known simplifications). |
 | Trigger input | Doublers and activated copiers come from a curated data file. Eldrazi spells cast in response are a plain count. |
-| Result screen | The number plus a short breakdown. |
+| Engine | Closed-form formulas that encode one documented best line of play. A stack simulator in the test suite replays that line and must agree with the formulas. |
+| Result screen | The number, the ordered line of play, and a short breakdown. |
 | Hosting | GitHub Pages, deployed by GitHub Actions on push to `main`. |
 | Stack | Vite, TypeScript, `vite-plugin-pwa`, plain DOM for the UI, Vitest for tests. No UI framework. |
 
@@ -54,59 +59,56 @@ designed so that new doublers can be added by editing one data file.
 All of this follows from the printed card text and the official rulings on
 Ulalek and Echoes of Eternity.
 
-### How the loop works
+### The objects on the stack
 
-Ulalek's trigger reads: "Whenever you cast an Eldrazi spell, you may pay
-{C}{C}. If you do, copy all spells you control, then copy all other activated
-and triggered abilities you control."
+- **S**: the main spell, and its copies.
+- **R**: a response spell (an Eldrazi spell cast before any trigger
+  resolves), and its copies.
+- **U**: a Ulalek trigger. "You may pay {C}{C}. If you do, copy all spells
+  you control, then copy all other activated and triggered abilities you
+  control." The controller pays on resolution, so copies of U also offer the
+  payment.
+- **E**: an Echoes of Eternity copy trigger, "Whenever you cast a colorless
+  spell, copy it." Each E is tied to the spell whose cast made it trigger.
+  Copies of an E are tied to the same spell.
+- **A**: an activated copier's ability, "copy target triggered ability" (or
+  "activated or triggered" for Peter Parker's Camera). Archaic's is limited
+  to colorless sources, which Ulalek and Echoes both are.
 
-When a Ulalek trigger resolves and CC is paid, every spell on the stack is
-copied (doubling them) and every *other* trigger on the stack is copied,
-including other Ulalek triggers. The copied triggers are put on the stack
-after the copied spells, so they sit on top and resolve first. Therefore:
+What resolving each one does:
 
-- With exactly one Ulalek trigger, paying CC gives one copy and the chain
-  ends.
-- With two or more Ulalek triggers on the stack, each CC payment doubles the
-  spells and recreates a spare trigger, so the number of doublings is limited
-  only by colorless mana: `k = floor(C / 2)` payments.
-- Copies created by Ulalek are not "cast", so cast triggers (Echoes' copy
-  trigger, Glaring Fleshraker, Kozilek's Unsealing) never fire for copies.
+- **U, paid**: for every spell on the stack, put a copy on top. Then for
+  every *other* ability on the stack (U, E and A, originals and copies), put
+  a copy on top of those. The copied spells therefore sit under the copied
+  abilities. The controller chooses the order within each group and may
+  choose new targets for copied A's.
+- **U, unpaid**: nothing.
+- **E**: put a copy of its spell on top of the stack.
+- **A**: put a copy of the targeted ability on top of the stack.
+- **S or R**: resolves and leaves the stack. The count of S copies that
+  resolve is the answer.
 
-### Sources of extra Ulalek triggers
+Copies created this way are not "cast", so cast triggers (U, E, Glaring
+Fleshraker, Kozilek's Unsealing) never fire for them.
+
+### Sources of Ulalek triggers and copies
 
 1. **Static doublers**: permanents that make a triggered ability "trigger an
-   additional time". Each one that applies to Ulalek adds one trigger per
-   Eldrazi cast. Echoes of Eternity applies to colorless permanents. Roaming
-   Throne (naming Eldrazi) applies to Eldrazi creatures. Delney applies to
-   creatures with power 2 or less. Multiple copies stack.
-2. **Activated copiers**: "copy target triggered ability" abilities that cost
-   mana and tap. Each use adds one Ulalek trigger. Abstruse Archaic ({1},
-   colorless sources only), Strionic Resonator ({2}), Peter Parker's Camera
-   ({2} and a film counter). Because they tap, each gives one use per combo.
-   The user pays for them before entering the C total; the app only shows
-   the cost as a reminder.
-3. **Response spells**: another Eldrazi spell cast before any Ulalek trigger
-   resolves. It triggers Ulalek again, and the new trigger is doubled by the
-   static doublers just like the first one. The spell itself is also on the
-   stack and gets doubled with everything else. Which card it is does not
-   matter to the maths, so the app takes a count of such spells. They need
-   not be colorless (Nameless Inversion is black but is an Eldrazi spell
-   through changeling). The user enters the mana left after paying for
-   them.
+   additional time". Echoes applies to colorless permanents (Ulalek and
+   other Echoes). Roaming Throne naming Eldrazi applies to Eldrazi creatures
+   (Ulalek, not Echoes). Delney applies to creatures with power 2 or less
+   (Ulalek at 2/5, not Echoes). Multiple copies stack additively. Two Echoes
+   double each other's E trigger, which is why 1, 2 and 3 Echoes give 1, 4
+   and 9 spell copies (official ruling).
+2. **Activated copiers**: Abstruse Archaic ({1}), Strionic Resonator ({2}),
+   Peter Parker's Camera ({2} and a film counter). Each taps, so one
+   activation per combo. What the activation is worth depends on what it
+   targets and on what is above it on the stack; see The line of play.
+3. **Response spells**: each Eldrazi spell cast in response triggers Ulalek
+   `u` more times (see below). The spell itself is doubled with everything
+   else. Its identity does not matter, and it need not be colorless.
 
-### Copies from static doublers
-
-Echoes of Eternity also has its own cast trigger: "Whenever you cast a
-colorless spell, copy it." Because Echoes is itself a colorless permanent,
-a second Echoes makes the first one's copy trigger fire twice, and vice
-versa. The ruling confirms: one Echoes gives 1 extra copy, two give 4, three
-give 9. Roaming Throne and Delney do not copy spells and do not affect Echoes
-(Echoes is not a creature).
-
-### The formula
-
-Notation:
+### Tags and multiplicity
 
 - A permanent's *tags* describe it: `colorless`, `creature`, `eldrazi`,
   `enchantment`, `power-le-2`, and so on. Ulalek's tags are `colorless`,
@@ -117,37 +119,109 @@ Notation:
 - `multiplicity(P)` for a permanent P = 1 + the number of static doubler
   instances D, other than P itself, whose `affects` tags are all present on
   P. Two copies of Echoes each count as an instance.
-
-Then, for a main spell with tags S:
-
 - `u = multiplicity(Ulalek)`: Ulalek triggers per Eldrazi cast.
-- `c(S)` = sum, over every static doubler instance D with a `copiesSpell`
-  whose tags are all present on S, of `multiplicity(D)`. This is the number
-  of extra copies of the spell created by the doublers' own triggers. With
-  two Echoes this gives 2 + 2 = 4, matching the ruling.
-- `T = u * (1 if the main spell is an Eldrazi spell else 0) + u * (number of
-  response spells) + (number of activated copiers used)`.
-- `C` = the colorless mana entered by the user.
-- `k = floor(C / 2)` if `T >= 2`; `min(1, floor(C / 2))` if `T = 1`;
-  `0` if `T = 0`.
-- **Copies of the main spell on the stack at the end** =
-  `(1 + c(S)) * 2^k`. Duplicates = copies minus 1.
-- Each response spell is doubled by Ulalek too, so it ends up as at least
-  `2^k` copies. Echoes would add more if the spell is colorless, but since
-  the app does not know the card, it reports `2^k` as a secondary line when
-  the count is above 0.
+- `c` = sum, over every static doubler instance D with a `copiesSpell`
+  whose tags are all present on the main spell, of `multiplicity(D)`. This
+  is the number of E triggers tied to the main spell. Two Echoes give
+  2 + 2 = 4. A non-colorless main spell gives 0.
+
+### Why the maximum is what it is
+
+The main spell S is cast first and is the bottom of the stack for the whole
+combo, so every E tied to S resolves while S is still there.
+
+Call an object a **copy source** for S if resolving it, and everything it
+leads to, produces exactly one more resolved copy of S: a live copy of S, an
+E tied to S, or an A that targets an E tied to S (A makes an E copy, which
+makes an S copy). A copy source that sits *below* a paid U on the stack is
+copied by that payment, so it becomes two copy sources. A copy source above
+every remaining U resolves once and is worth exactly 1.
+
+With `k` payments available, a copy source that is below all the U's before
+the first payment is therefore worth `2^k`, and nothing can be worth more.
+The maximum is reached by getting every copy source under all the U's
+before paying anything, then paying `k` times while keeping the U copies on
+top each round. Three facts fix what can be arranged:
+
+- Triggers from the same cast go on the stack together in the order the
+  controller chooses, so S's E triggers can go under S's U triggers.
+- An A is activated with priority, so it always lands on top of whatever is
+  already there. The only way to get a U above an A is to cast an Eldrazi
+  response spell *after* activating A. Without a response spell, an A can
+  only be worth 1 copy (targeting an E) or 1 extra U (targeting a U).
+- The number of payments is limited by C, not by the number of U's, as soon
+  as there are two U's on the stack. A second U guarantees that each
+  payment recreates a spare U. Extra U's beyond two are worthless.
+
+### The line of play
+
+Given `u`, `c`, the number of copiers `a`, the number of response spells
+`r`, the main spell's Eldrazi flag `m` (1 or 0), and colorless mana `C`:
+
+1. `T = u * m + u * r`, the Ulalek triggers that spells produce.
+2. Copier allocation:
+   - If `c > 0` (there is an E tied to S) and `r > 0`: every copier targets
+     an E tied to S and is activated *before* the response spell is cast, so
+     it is a copy source worth `2^k`.
+   - If `c > 0` and `r = 0`: every copier targets an E tied to S and is worth
+     exactly 1.
+   - If `c = 0` and `T >= 1`: every copier targets a U and adds one U.
+     `T` becomes `T + a`. Only the first one can matter.
+   - If `c = 0` and `T = 0`: copiers have nothing useful to target.
+3. Payments: `k = 0` if `T = 0`; `k = min(1, floor(C / 2))` if `T = 1`;
+   `k = floor(C / 2)` if `T >= 2`.
+4. `sources = 1 + c + (a if c > 0 and r > 0 else 0)`.
+5. `immediate = a if c > 0 and r = 0 else 0`.
+6. **Copies of S** = `sources * 2^k + immediate`. Duplicates = copies minus 1.
+7. Each response spell ends up as at least `2^k` copies (Echoes would add
+   more if it is colorless, which the app does not know).
+8. Leftover C = `C - 2k`.
+
+Order of operations the app prints (steps that do not apply are omitted):
+
+1. Cast S. Ulalek triggers `u` times; Echoes triggers `c` times. Put the
+   Echoes triggers on the stack first, then the Ulalek triggers on top.
+2. With those triggers on the stack, activate each copier, targeting an
+   Echoes trigger (or, when there is none, a Ulalek trigger). Do not let
+   the response spell wait: cast it only after every copier is activated.
+3. Cast the response spell. Ulalek triggers `u` more times; put those on
+   top.
+4. Let the top Ulalek trigger resolve and pay {C}{C}. Put the spell copies
+   on the stack, then the ability copies, with the Ulalek copies on top of
+   the Echoes and copier copies.
+5. Repeat step 4 until `k` payments are made. After payment `i` there are
+   `sources * 2^i` copy sources on the stack.
+6. Stop paying. Let everything resolve. Each copier ability copies an
+   Echoes trigger, each Echoes trigger copies S, each copy of S resolves.
+7. Result: `copies` copies of S in total, `duplicates` of them new.
+
+Notes the app adds when they apply:
+
+- "Only one Ulalek trigger: only the first payment does anything."
+- "Ulalek never triggers: the main spell is not an Eldrazi spell and
+  nothing else is cast."
+- "The response spell adds nothing here: you already have two Ulalek
+  triggers and no copier to put under it." (when `r > 0`, `a = 0` and
+  `u * m >= 2`)
+- "Extra copiers add nothing here." (when `c = 0` and `a > 1`, or `c = 0`
+  and `T >= 2` before copiers)
 
 Worked examples (main spell is a colorless Eldrazi spell, C = 6 after
 paying for everything):
 
-| Setup | u | c | T | k | Copies |
-| --- | --- | --- | --- | --- | --- |
-| Nothing else | 1 | 0 | 1 | 1 | 2 |
-| Archaic (its {1} already paid) | 1 | 0 | 2 | 3 | 8 |
-| One Echoes | 2 | 1 | 2 | 3 | 16 |
-| Two Echoes | 3 | 4 | 3 | 3 | 40 |
-| One Echoes plus Roaming Throne | 3 | 1 | 3 | 3 | 16 |
-| One Eldrazi spell cast in response (its cost already deducted) | 1 | 0 | 2 | 3 | 8 |
+| Setup | u | c | T | k | sources | immediate | Copies |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Nothing else | 1 | 0 | 1 | 1 | 1 | 0 | 2 |
+| Archaic | 1 | 0 | 2 | 3 | 1 | 0 | 8 |
+| One response spell | 1 | 0 | 2 | 3 | 1 | 0 | 8 |
+| One Echoes | 2 | 1 | 2 | 3 | 2 | 0 | 16 |
+| One Echoes, Archaic | 2 | 1 | 2 | 3 | 2 | 1 | 17 |
+| One Echoes, Archaic, one response spell | 2 | 1 | 4 | 3 | 3 | 0 | 24 |
+| Two Echoes | 3 | 4 | 3 | 3 | 5 | 0 | 40 |
+| Two Echoes, Archaic and Resonator, one response spell | 3 | 4 | 6 | 3 | 7 | 0 | 56 |
+| One Echoes plus Roaming Throne | 3 | 1 | 3 | 3 | 2 | 0 | 16 |
+| Non-Eldrazi colorless spell, one Echoes, no response | 2 | 1 | 0 | 0 | 2 | 0 | 2 |
+| Non-Eldrazi colorless spell, one Echoes, one response | 2 | 1 | 2 | 3 | 2 | 0 | 16 |
 
 ### Mana
 
@@ -175,6 +249,9 @@ reports the leftover C (0 or 1) after the payments.
   user enters C net of it. Untap effects are not modelled.
 - Copies of a response spell are counted but nothing they do on resolution
   is modelled.
+- The line of play is the one described above. Other lines are not
+  searched; the argument in "Why the maximum is what it is" is the reason
+  none of them can do better under a fixed C budget.
 
 ## Architecture
 
@@ -183,7 +260,9 @@ src/
   engine/
     cards.ts       card data: static doublers, activated copiers,
                    Ulalek's tags
+    multiplicity.ts  tag matching, u and c from the card data
     calculate.ts   calculate(input) -> CalcResult (pure function)
+    line.ts        describeLine(input, result) -> Step[] (the order of play)
     types.ts       shared types
   ui/
     render.ts      builds the form from the card data, renders results
@@ -192,7 +271,9 @@ src/
   styles.css       theme and layout
 index.html
 public/            icons, favicon
-tests/             Vitest specs for engine and a UI smoke test
+tests/
+  simulator.ts     stack simulator used only as a test oracle
+  *.test.ts        Vitest specs
 .github/workflows/deploy.yml
 ```
 
@@ -217,20 +298,31 @@ The engine has no DOM dependencies and is the only place the rules live.
 ```ts
 {
   ok: true
-  copies: number            // of the main spell
-  duplicates: number
+  copies: bigint            // of the main spell
+  duplicates: bigint
   triggersPerCast: number   // u
-  totalTriggers: number     // T
-  doublerCopies: number     // c(S)
+  totalTriggers: number     // T after copier allocation
+  doublerCopies: number     // c
+  copierRole: 'source' | 'immediate' | 'trigger' | 'none'
+  sources: number
+  immediate: number
   payments: number          // k
   leftoverColorless: number // 0 or 1
-  responseSpellCopies: number   // copies of each response spell, 0 if none
-  notes: string[]           // e.g. "Single trigger: only one payment counts"
+  responseSpellCopies: bigint   // per response spell, 0n if none
+  notes: string[]
 } | {
   ok: false
   error: string             // e.g. "Colorless mana must be a whole number"
 }
 ```
+
+`Step` (from `line.ts`): `{ title: string; detail?: string }`. Steps are
+plain sentences built from the input, in the order listed under The line of
+play. Card names come from the data so the steps name the actual copiers
+selected.
+
+Counts use `bigint` for the exponential quantities so that large C values
+print exactly. The UI formats them with thousands separators.
 
 Card data shape (`cards.ts`):
 
@@ -250,6 +342,22 @@ Initial data:
 - Activated copiers: Abstruse Archaic, Strionic Resonator, Peter Parker's
   Camera.
 
+### Test simulator
+
+`tests/simulator.ts` models the stack as an array of objects (S, R, U, E,
+A) with the resolution rules from The objects on the stack, and replays the
+line of play with the fixed ordering policy: E's under U's on cast, copiers
+activated targeting an E tied to S (or a U when there is none) before the
+response spell is cast, U copies placed on top each round, pay while C
+allows and a U is on top, then let everything resolve. It counts resolved
+copies of S and of each R. It is a few hundred lines and has no dependency
+on the app engine beyond the card data.
+
+Its purpose is to catch algebra mistakes in `calculate.ts`: the tests run
+both over a grid of inputs and require identical answers. Because the
+simulator also encodes the policy, it is checked separately against the
+hand-derived facts: the Echoes ruling numbers, and the worked examples.
+
 ### UI
 
 Single screen, mobile first, generated from the card data so that new
@@ -268,11 +376,11 @@ entries appear without UI changes.
    with helper text: any Eldrazi spell cast before a trigger resolves
    (Eldritch Immunity, Nameless Inversion, Dimensional Infiltrator);
    subtract its cost from the mana above.
-5. **Result panel**, sticky at the bottom: the copy count in large type,
-   duplicates beneath it, then the breakdown lines: triggers per cast and
-   total, doubler copies, number of CC payments, the formula, leftover C,
-   and any notes. Errors replace the
-   number with the message.
+5. **Result panel**, sticky at the bottom and expandable: collapsed, it
+   shows the copy count in large type and duplicates beneath it. Expanded,
+   it adds the numbered line of play, then the breakdown lines (triggers
+   per cast and total, copy sources, payments, formula, leftover C) and
+   any notes. Errors replace the number with the message.
 6. Reset button in the header. Footer with the known simplifications.
 
 Results update live on every input change. Inputs persist in localStorage
@@ -281,7 +389,8 @@ and are restored on load.
 Visual direction: dark theme by default with a deep violet background and a
 pale accent, light theme when the system prefers it. System font stack so
 it works offline without font downloads. Generous spacing and large numerals
-so it reads at arm's length during a game.
+so it reads at arm's length during a game. The line of play uses numbered
+steps with the card names emphasised so it can be read aloud.
 
 ### PWA
 
@@ -300,18 +409,28 @@ clamped by the UI stepper; the engine additionally validates and returns
 
 Engine tests (Vitest):
 
-- Every row of the worked examples table.
-- `multiplicity` and `c(S)` for: no doublers, one Echoes, two Echoes, three
+- Every row of the worked examples table, for both `calculate` and the
+  simulator.
+- `multiplicity` and `c` for: no doublers, one Echoes, two Echoes, three
   Echoes (9 copies), Echoes plus Throne, Delney alone, Throne alone.
-- Non-Eldrazi main spell with and without an Eldrazi response spell.
-- Non-colorless main spell with Echoes (no doubler copies).
-- Each activated copier adds exactly one trigger.
+- Copier allocation in each of the four branches, and the copier role
+  reported.
+- Non-Eldrazi main spell with and without a response spell.
+- Non-colorless main spell with Echoes (no doubler copies, copiers become
+  extra triggers).
 - Odd C amounts and leftover reporting, C = 0, C = 1 with two triggers.
 - Response spell counts of 0, 1 and 2, and their reported copies.
+- Grid test: `calculate` equals the simulator for C in 0..10, Echoes 0..3,
+  Throne 0..2, Delney 0..1, copiers 0..3, response spells 0..2, and both
+  main-spell toggles.
+- `describeLine` produces the expected step titles for: nothing else, one
+  Echoes, Echoes with copier and response spell, copier with no Echoes,
+  non-Eldrazi main spell with no response.
+- Each note appears exactly when its condition holds.
 
 UI: a smoke test that renders the form from the data, sets a few inputs and
-checks the displayed number. CI runs `npm test` and `npm run build` on every
-push and pull request.
+checks the displayed number and the first step. CI runs `npm test` and
+`npm run build` on every push and pull request.
 
 ## Deployment
 
@@ -323,7 +442,7 @@ app from Chrome on Android ("Add to Home screen").
 
 ## Out of scope
 
-- Simulating the stack step by step, or mana produced mid-combo.
+- Searching over alternative lines of play, or mana produced mid-combo.
 - Multiple rounds of the combo. Re-run the app with the new mana instead.
 - Editing card data inside the app.
 - Deducting any cost. Naming or costing individual response spells.
