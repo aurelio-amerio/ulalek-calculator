@@ -178,23 +178,24 @@ body {
   margin: 0 0 6px;
 }
 
-/* Helper text sits on its own line under the label and control. */
+/* Helper text sits under the label, in the text column only. */
 .hint {
   display: block;
-  flex-basis: 100%;
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.4;
-  margin-top: -2px;
 }
 
+/*
+ * Rows are a two-column grid: text (label + hint) on the left, the control on
+ * the right spanning both text rows. The hint can never flow under the control.
+ */
 .stepper,
 .toggle {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
+  column-gap: 12px;
   padding: 10px 0;
   border-top: 1px solid var(--border);
   position: relative;
@@ -203,8 +204,25 @@ body {
 .stepper__text,
 .toggle__text,
 .check__text {
-  flex: 1;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
+}
+
+.stepper > .hint,
+.toggle > .hint,
+.check > .hint {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 6px;
+}
+
+.stepper__controls,
+.toggle__track,
+.check__box {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
 }
 
 .card h2 + .stepper,
@@ -466,11 +484,10 @@ details[open] .chevron {
 }
 
 .check {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px 12px;
+  column-gap: 12px;
   padding: 9px 0;
   border-top: 1px solid var(--border);
   position: relative;
