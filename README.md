@@ -58,7 +58,9 @@ is not HTTPS; use the live link for that.
 
 Every push to `main` runs the tests, builds the site and deploys it to GitHub
 Pages through `.github/workflows/deploy.yml`. Pull requests run the tests and
-build without deploying.
+build without deploying. Pages must be enabled once in the repository
+settings (Settings → Pages → Source: GitHub Actions) before the Live link
+works.
 
 ## Adding a card
 
@@ -70,7 +72,9 @@ Card data lives in `src/engine/cards.ts`.
   copies spells you cast, like Echoes. Ulalek's own tags are in
   `ULALEK_TAGS`.
 - A "copy target ability" activation goes in `ACTIVATED_COPIERS` with its
-  cost as text.
+  cost as text. Copier roles are assigned uniformly by `affectsSourceTags`,
+  so a copier with narrower real-world exceptions needs engine and simulator
+  review, not just a data entry.
 
 Add a test for the new card in `tests/multiplicity.test.ts` or
 `tests/calculate.test.ts`. The grid test in `tests/simulator.test.ts` checks

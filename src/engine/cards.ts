@@ -3,6 +3,12 @@ import type { ActivatedCopier, StaticDoubler, Tag } from './types';
 /** Ulalek, Fused Atrocity: colorless (devoid) legendary Eldrazi creature, 2/5. */
 export const ULALEK_TAGS: Tag[] = ['colorless', 'creature', 'eldrazi', 'legendary', 'power-le-2'];
 
+/** Upper bound the UI and `validate` enforce on colorless mana, to keep the result a finite, displayable integer. */
+export const MAX_COLORLESS = 999;
+
+/** Upper bound the UI and `normalizeInput` enforce on response spells cast. */
+export const MAX_RESPONSE_SPELLS = 99;
+
 export const STATIC_DOUBLERS: StaticDoubler[] = [
   {
     id: 'echoes',
@@ -31,6 +37,13 @@ export const STATIC_DOUBLERS: StaticDoubler[] = [
   },
 ];
 
+/**
+ * Copier roles (source / immediate / trigger / none) are assigned uniformly in calculate.ts based only
+ * on `affectsSourceTags`: any copier that can target an Echoes-style trigger gets treated the same as any
+ * other, and likewise for one that can only target a Ulalek trigger. Adding a copier whose real rules text
+ * is narrower than that (e.g. it can copy some Echoes triggers but not others, or has some other exception)
+ * needs a look at calculate.ts's allocation loop and at tests/simulator.ts, not just a new entry here.
+ */
 export const ACTIVATED_COPIERS: ActivatedCopier[] = [
   {
     id: 'archaic',

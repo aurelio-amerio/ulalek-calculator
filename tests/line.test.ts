@@ -102,4 +102,51 @@ describe('describeLine', () => {
       "Activate Abstruse Archaic, Strionic Resonator and Peter Parker's Camera, targeting an Echoes trigger.",
     );
   });
+
+  it('non-Eldrazi main spell, trigger-role copier, response spell: copier after the response spell', () => {
+    const input = mk({ mainSpell: { eldrazi: false, colorless: false }, copiers: ['archaic'], responseSpells: 1 });
+    const steps = line(input);
+    expect(steps.map((s) => s.title)).toEqual([
+      'Cast the main spell.',
+      'Cast your Eldrazi spell in response.',
+      'Activate Abstruse Archaic, targeting a Ulalek trigger.',
+      'Let the top Ulalek trigger resolve and pay {C}{C}.',
+      'Repeat until you have paid 3 times.',
+      'Stop paying and let everything resolve.',
+      'Result: 8 copies of the main spell (7 new).',
+    ]);
+    expect(steps[1].detail).not.toContain('above the copier abilities');
+    const result = calculate(input);
+    expect(result.ok && result.copies).toBe(8n);
+  });
+
+  it('trigger role with two triggers already present: neutral wording, not "so the loop can continue"', () => {
+    const steps = line(mk({ doublers: { throne: 1 }, copiers: ['archaic'] }));
+    expect(steps[1].detail).not.toContain('so the loop can continue');
+    expect(steps[1].detail).toContain('not needed here');
+  });
+
+  it('pluralises "1 copy source becomes" correctly', () => {
+    const steps = line(mk({ copiers: ['archaic'] }));
+    const repeatStep = steps.find((s) => s.title.startsWith('Repeat until'));
+    expect(repeatStep?.detail).toContain('1 copy source becomes 8');
+  });
+
+  it('when Ulalek triggers exist but no payment is made, tells the player to decline', () => {
+    const steps = line(mk({ colorless: 0 }));
+    expect(steps.map((s) => s.title)).toContain('Decline the {C}{C} payment and let everything resolve.');
+  });
+
+  it('paying-step detail mentions Echoes and copier copies only when they exist', () => {
+    const withBoth = line(mk({ doublers: { echoes: 1 }, copiers: ['camera'] }));
+    const payBoth = withBoth.find((s) => s.title.startsWith('Let the top'));
+    expect(payBoth?.detail).toContain('Echoes');
+    expect(payBoth?.detail).toContain('copier');
+
+    const withNeither = line(mk({ copiers: ['archaic'] }));
+    const payNeither = withNeither.find((s) => s.title.startsWith('Let the top'));
+    expect(payNeither?.detail).not.toContain('Echoes');
+    expect(payNeither?.detail).not.toContain('copier');
+    expect(payNeither?.detail).toContain('the Ulalek copies');
+  });
 });

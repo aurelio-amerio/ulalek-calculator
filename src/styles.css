@@ -43,7 +43,7 @@ body {
 }
 
 body {
-  padding-bottom: 8rem;
+  padding-bottom: 10rem;
 }
 
 .app {
@@ -261,6 +261,7 @@ body {
   list-style: none;
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 14px 18px;
   cursor: pointer;
@@ -281,6 +282,7 @@ body {
 
 .result__caption {
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .result__chevron {

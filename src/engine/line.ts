@@ -23,6 +23,8 @@ export function describeLine(input: CalcInput, result: CalcResult): Step[] {
   const k = result.payments;
   const r = input.responseSpells;
   const copierNames = selectedCopiers(input).map((cp) => cp.name);
+  const m = input.mainSpell.eldrazi ? 1 : 0;
+  const spellTriggers = u * m + u * r;
 
   // 1. Cast the main spell.
   {
@@ -38,55 +40,78 @@ export function describeLine(input: CalcInput, result: CalcResult): Step[] {
     steps.push({ title: 'Cast the main spell.', detail: parts.join(' ') });
   }
 
-  // 2. Activate copiers.
-  if (copierNames.length > 0) {
+  // 2 and 3. Activate copiers and cast the response spell(s), in the right order.
+  const copierStep = (): Step | null => {
+    if (copierNames.length === 0) return null;
     const names = nameList(copierNames);
     switch (result.copierRole) {
       case 'source':
-        steps.push({
+        return {
           title: `Activate ${names}, targeting an Echoes trigger.`,
           detail: 'Hold priority: the response spell must be cast while these abilities are still on the stack.',
-        });
-        break;
+        };
       case 'immediate':
-        steps.push({
+        return {
           title: `Activate ${names}, targeting an Echoes trigger.`,
           detail: 'Each one makes one extra copy that resolves right away.',
-        });
-        break;
-      case 'trigger':
-        steps.push({
-          title: `Activate ${names}, targeting a Ulalek trigger.`,
-          detail: 'This puts a second Ulalek trigger on the stack so the loop can continue.',
-        });
-        break;
+        };
+      case 'trigger': {
+        const detail =
+          spellTriggers >= 2
+            ? 'It adds one more Ulalek trigger, which is not needed here.'
+            : 'This puts a second Ulalek trigger on the stack so the loop can continue.';
+        return { title: `Activate ${names}, targeting a Ulalek trigger.`, detail };
+      }
       case 'none':
-        steps.push({ title: `Skip ${names}.`, detail: 'There is nothing useful to target.' });
-        break;
+        return { title: `Skip ${names}.`, detail: 'There is nothing useful to target.' };
     }
-  }
-
-  // 3. Cast the response spell(s).
-  if (r > 0) {
+  };
+  const responseStep = (): Step | null => {
+    if (r === 0) return null;
     const above = result.copierRole === 'source' ? ', above the copier abilities' : '';
-    steps.push({
+    return {
       title: r === 1 ? 'Cast your Eldrazi spell in response.' : `Cast your ${r} Eldrazi spells in response.`,
       detail: `Ulalek triggers ${times(u, 'more time')} per spell. Put those triggers on top of the stack${above}.`,
-    });
+    };
+  };
+  // The 'trigger' copier role targets a Ulalek trigger. When the main spell is not Eldrazi, that trigger
+  // only exists once a response spell has been cast, so the copier step must come after it.
+  const copierAfterResponse = result.copierRole === 'trigger' && !input.mainSpell.eldrazi;
+  if (copierAfterResponse) {
+    const rs = responseStep();
+    if (rs) steps.push(rs);
+    const cs = copierStep();
+    if (cs) steps.push(cs);
+  } else {
+    const cs = copierStep();
+    if (cs) steps.push(cs);
+    const rs = responseStep();
+    if (rs) steps.push(rs);
   }
 
   // 4 and 5. Pay.
   if (k > 0) {
-    steps.push({
-      title: 'Let the top Ulalek trigger resolve and pay {C}{C}.',
-      detail:
-        'Put the spell copies on the stack, then the ability copies, with the Ulalek copies on top of the Echoes and copier copies.',
-    });
+    const hasEchoes = c > 0;
+    const hasCopierCopies = result.copierRole === 'source' || result.copierRole === 'immediate';
+    let payDetail: string;
+    if (hasEchoes || hasCopierCopies) {
+      const tail =
+        hasEchoes && hasCopierCopies
+          ? 'the Echoes and copier copies'
+          : hasEchoes
+            ? 'the Echoes copies'
+            : 'the copier copies';
+      payDetail = `Put the spell copies on the stack, then the ability copies, with the Ulalek copies on top of ${tail}.`;
+    } else {
+      payDetail = 'Put the spell copies on the stack, then the Ulalek copies on top of the spell copies.';
+    }
+    steps.push({ title: 'Let the top Ulalek trigger resolve and pay {C}{C}.', detail: payDetail });
     if (k > 1) {
       const final = BigInt(result.sources) * 2n ** BigInt(k);
+      const verb = result.sources === 1 ? 'becomes' : 'become';
       steps.push({
         title: `Repeat until you have paid ${k} times.`,
-        detail: `After each payment everything under the Ulalek copies doubles: ${result.sources} copy sources become ${formatCount(final)} after the last payment.`,
+        detail: `After each payment everything under the Ulalek copies doubles: ${times(result.sources, 'copy source')} ${verb} ${formatCount(final)} after the last payment.`,
       });
     }
   }
@@ -100,8 +125,14 @@ export function describeLine(input: CalcInput, result: CalcResult): Step[] {
     if (c > 0) parts.push('each Echoes trigger copies the main spell');
     parts.push('every copy of the main spell resolves');
     const detail = parts.join(', ');
+    const title =
+      k > 0
+        ? 'Stop paying and let everything resolve.'
+        : result.totalTriggers > 0
+          ? 'Decline the {C}{C} payment and let everything resolve.'
+          : 'Let everything resolve.';
     steps.push({
-      title: k > 0 ? 'Stop paying and let everything resolve.' : 'Let everything resolve.',
+      title,
       detail: detail.charAt(0).toUpperCase() + detail.slice(1) + '.',
     });
   }

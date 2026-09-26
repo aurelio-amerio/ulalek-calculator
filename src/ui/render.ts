@@ -1,4 +1,4 @@
-import { ACTIVATED_COPIERS, STATIC_DOUBLERS } from '../engine/cards';
+import { ACTIVATED_COPIERS, MAX_COLORLESS, MAX_RESPONSE_SPELLS, STATIC_DOUBLERS } from '../engine/cards';
 import { calculate } from '../engine/calculate';
 import { defaultInput, normalizeInput } from '../engine/input';
 import { describeLine, formatCount } from '../engine/line';
@@ -137,7 +137,7 @@ function buildForm(input: CalcInput, onChange: () => void): HTMLElement[] {
           label: 'Colorless mana left',
           hint: 'After casting the spell, any response spells, and any copier activations below.',
           min: 0,
-          max: Number.MAX_SAFE_INTEGER,
+          max: MAX_COLORLESS,
           big: true,
           get: () => input.colorless,
           set: (n) => (input.colorless = n),
@@ -205,7 +205,7 @@ function buildForm(input: CalcInput, onChange: () => void): HTMLElement[] {
           label: 'Eldrazi spells cast in response',
           hint: 'Any Eldrazi spell cast before a trigger resolves (Eldritch Immunity, Nameless Inversion, Dimensional Infiltrator). Subtract its cost from the mana above.',
           min: 0,
-          max: 99,
+          max: MAX_RESPONSE_SPELLS,
           get: () => input.responseSpells,
           set: (n) => (input.responseSpells = n),
         },
@@ -219,14 +219,18 @@ function renderResult(box: HTMLElement, input: CalcInput, open: boolean, onToggl
   const result = calculate(input);
   box.replaceChildren();
   if (!result.ok) {
-    box.append(el('p', { class: 'result__error', 'data-testid': 'result-error' }, result.error));
+    box.append(el('p', { class: 'result__error', 'data-testid': 'result-error', 'aria-live': 'polite' }, result.error));
     return;
   }
 
   const summary = el(
     'summary',
     { class: 'result__summary' },
-    el('span', { class: 'result__count', 'data-testid': 'result-copies' }, formatCount(result.copies)),
+    el(
+      'span',
+      { class: 'result__count', 'data-testid': 'result-copies', 'aria-live': 'polite' },
+      formatCount(result.copies),
+    ),
     el('span', { class: 'result__caption' }, `copies of the main spell · ${formatCount(result.duplicates)} new`),
     el('span', { class: 'result__chevron', 'aria-hidden': 'true' }),
   );
@@ -273,7 +277,7 @@ export function mountApp(root: HTMLElement, initial: CalcInput, onChange: (input
   let detailsOpen = false;
 
   const form = el('div', { class: 'form' });
-  const resultBox = el('section', { class: 'result', 'data-testid': 'result', 'aria-live': 'polite' });
+  const resultBox = el('section', { class: 'result', 'data-testid': 'result' });
 
   const rerender = () => {
     onChange(normalizeInput(input));
@@ -298,7 +302,10 @@ export function mountApp(root: HTMLElement, initial: CalcInput, onChange: (input
       el(
         'footer',
         { class: 'footer' },
-        'Assumes Ulalek, Fused Atrocity is on the battlefield and that you spend all colorless mana on its trigger. Mana produced by the copies themselves is not counted: anything that makes mana inside the loop is infinite anyway.',
+        'Assumes Ulalek, Fused Atrocity is on the battlefield and that you spend all colorless mana on its trigger. ' +
+          'Known simplifications: mana made by the copies themselves is ignored; cost reducers are not modelled; ' +
+          "response spells are assumed to be Eldrazi and their own Echoes copies are ignored; It That Heralds the End turns Delney off; " +
+          'copier costs and untaps are not modelled.',
       ),
       resultBox,
     ),

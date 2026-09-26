@@ -1,4 +1,4 @@
-import { ACTIVATED_COPIERS, STATIC_DOUBLERS, ULALEK_TAGS } from './cards';
+import { ACTIVATED_COPIERS, MAX_COLORLESS, STATIC_DOUBLERS, ULALEK_TAGS } from './cards';
 import { copyTriggers, hasAll, mainSpellTags, ulalekTriggersPerCast } from './multiplicity';
 import type { ActivatedCopier, CalcInput, CalcResult, CopierRole } from './types';
 
@@ -9,6 +9,7 @@ function isCount(n: unknown): n is number {
 /** Returns an error message, or null when the input is usable. */
 export function validate(input: CalcInput): string | null {
   if (!isCount(input.colorless)) return 'Colorless mana must be a whole number of 0 or more.';
+  if (input.colorless > MAX_COLORLESS) return `Colorless mana must be ${MAX_COLORLESS} or less.`;
   if (!isCount(input.responseSpells)) return 'Response spells must be a whole number of 0 or more.';
   for (const d of STATIC_DOUBLERS) {
     const n = input.staticDoublers[d.id] ?? 0;

@@ -53,4 +53,9 @@ describe('normalizeInput', () => {
     expect(n.mainSpell.eldrazi).toBe(true);
     expect(n.activatedCopiers.archaic).toBe(false);
   });
+
+  it('clamps huge colorless and responseSpells to their engine maximums', () => {
+    expect(normalizeInput({ colorless: 1e10 }).colorless).toBe(999);
+    expect(normalizeInput({ responseSpells: 500 }).responseSpells).toBe(99);
+  });
 });

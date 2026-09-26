@@ -92,6 +92,13 @@ describe('app', () => {
     expect(text('result-copies')).toBe('2');
   });
 
+  it('clamps a huge typed colorless value to the engine max instead of throwing', () => {
+    const handle = mountApp(root, defaultInput(), () => {});
+    expect(() => typeColorless('10000000000')).not.toThrow();
+    expect(handle.getInput().colorless).toBe(999);
+    expect(() => q('result-copies')).not.toThrow();
+  });
+
   it('keeps the result panel open across re-renders', () => {
     mountApp(root, defaultInput(), () => {});
     const details = q<HTMLDetailsElement>('result-details');

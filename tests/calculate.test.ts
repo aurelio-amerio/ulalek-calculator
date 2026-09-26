@@ -174,6 +174,15 @@ describe('validate', () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toContain(fragment);
   });
+
+  it('rejects colorless above MAX_COLORLESS without throwing', () => {
+    const r = calculate(mk({ colorless: 1e10 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error).toContain('Colorless mana');
+      expect(r.error).toContain('999');
+    }
+  });
 });
 
 describe('selectedCopiers', () => {
