@@ -106,8 +106,9 @@ function stepper(o: StepperOpts, onChange: () => void): HTMLElement {
   return el(
     'div',
     { class: `stepper${o.big ? ' stepper--big' : ''}` },
-    el('div', { class: 'stepper__text' }, el('span', { class: 'stepper__label' }, o.label), ...hint(o.hint)),
+    el('div', { class: 'stepper__text' }, el('span', { class: 'stepper__label' }, o.label)),
     el('div', { class: 'stepper__controls' }, dec, value, inc),
+    ...hint(o.hint),
   );
 }
 
@@ -129,9 +130,10 @@ function toggle(o: ToggleOpts, onChange: () => void): HTMLElement {
   return el(
     'label',
     { class: 'toggle' },
-    el('span', { class: 'toggle__text' }, el('span', { class: 'toggle__label' }, o.label), ...hint(o.hint)),
+    el('span', { class: 'toggle__text' }, el('span', { class: 'toggle__label' }, o.label)),
     box,
     el('span', { class: 'toggle__track', 'aria-hidden': 'true' }),
+    ...hint(o.hint),
   );
 }
 
@@ -153,9 +155,10 @@ function checkbox(o: CheckOpts, onChange: () => void): HTMLElement {
   return el(
     'label',
     { class: 'check' },
-    el('span', { class: 'check__text' }, el('span', { class: 'check__label' }, o.label), ...hint(o.hint)),
+    el('span', { class: 'check__text' }, el('span', { class: 'check__label' }, o.label)),
     box,
     el('span', { class: 'check__box', 'aria-hidden': 'true' }),
+    ...hint(o.hint),
   );
 }
 
@@ -510,7 +513,8 @@ export function mountApp(
         { class: 'footer' },
         'Assumes Ulalek, Fused Atrocity is on the battlefield and that you spend all colorless mana on its trigger. ' +
           'Known simplifications: mana made by the copies themselves is ignored; cost reducers are not modelled; ' +
-          "response spells are assumed to be Eldrazi and their own Echoes copies are ignored (they also get doubled by the same amount).",
+          'response spells are assumed to be Eldrazi and their own Echoes copies are ignored (they also get doubled by the same amount); ' +
+          'Roaming Throne is assumed to name Eldrazi.',
       ),
       resultBox,
     ),

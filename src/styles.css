@@ -178,22 +178,33 @@ body {
   margin: 0 0 6px;
 }
 
+/* Helper text sits on its own line under the label and control. */
 .hint {
   display: block;
+  flex-basis: 100%;
   color: var(--muted);
   font-size: 0.8rem;
-  margin-top: 2px;
+  line-height: 1.4;
+  margin-top: -2px;
 }
 
 .stepper,
 .toggle {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
   padding: 10px 0;
   border-top: 1px solid var(--border);
   position: relative;
+}
+
+.stepper__text,
+.toggle__text,
+.check__text {
+  flex: 1;
+  min-width: 0;
 }
 
 .card h2 + .stepper,
@@ -456,9 +467,10 @@ details[open] .chevron {
 
 .check {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 6px 12px;
   padding: 9px 0;
   border-top: 1px solid var(--border);
   position: relative;
