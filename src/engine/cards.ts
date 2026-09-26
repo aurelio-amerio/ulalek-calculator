@@ -17,7 +17,9 @@ export const STATIC_DOUBLERS: StaticDoubler[] = [
     affects: ['colorless'],
     copiesSpell: ['colorless'],
     maxCount: 3,
-    note: 'Doubles triggers of your other colorless permanents and copies each colorless spell you cast. Two Echoes double each other.',
+    oracle:
+      'If a triggered ability of a colorless spell you control or another colorless permanent you control triggers, that ability triggers an additional time.\n' +
+      'Whenever you cast a colorless spell, copy it. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)',
   },
   {
     id: 'throne',
@@ -25,7 +27,9 @@ export const STATIC_DOUBLERS: StaticDoubler[] = [
     tags: ['colorless', 'artifact', 'creature', 'eldrazi'],
     affects: ['creature', 'eldrazi'],
     maxCount: 1,
-    note: 'Naming Eldrazi. Only affects creatures, so it does not touch Echoes. A second Throne adds no copies.',
+    oracle:
+      'Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\n' +
+      'If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.',
   },
   {
     id: 'delney',
@@ -33,7 +37,9 @@ export const STATIC_DOUBLERS: StaticDoubler[] = [
     tags: ['white', 'creature', 'legendary', 'power-le-2'],
     affects: ['creature', 'power-le-2'],
     maxCount: 1,
-    note: 'Ulalek must have power 2 or less. It That Heralds the End turns this off.',
+    oracle:
+      "Creatures you control with power 2 or less can't be blocked by creatures with power 3 or greater.\n" +
+      'If a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time.',
   },
 ];
 
@@ -48,20 +54,25 @@ export const ACTIVATED_COPIERS: ActivatedCopier[] = [
   {
     id: 'archaic',
     name: 'Abstruse Archaic',
-    costText: '{1}, tap',
+    costText: '{1}, {T}',
     affectsSourceTags: ['colorless'],
-    note: 'Copies abilities from colorless sources only.',
+    oracle:
+      'Vigilance\n{1}, {T}: Copy target activated or triggered ability you control from a colorless source. You may choose new targets for the copy. (Mana abilities can\'t be targeted.)',
   },
   {
     id: 'resonator',
     name: 'Strionic Resonator',
-    costText: '{2}, tap',
+    costText: '{2}, {T}',
     affectsSourceTags: [],
+    oracle:
+      '{2}, {T}: Copy target triggered ability you control. You may choose new targets for the copy. (A triggered ability uses the words "when," "whenever," or "at.")',
   },
   {
     id: 'camera',
     name: "Peter Parker's Camera",
-    costText: '{2}, tap, remove a film counter',
+    costText: '{2}, {T}, remove a film counter',
     affectsSourceTags: [],
+    oracle:
+      'This artifact enters with three film counters on it.\n{2}, {T}, Remove a film counter from this artifact: Copy target activated or triggered ability you control. You may choose new targets for the copy.',
   },
 ];

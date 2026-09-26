@@ -72,10 +72,79 @@ body {
   padding: 20px 0 8px;
 }
 
+.header__title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
 .header h1 {
   font-size: 1.35rem;
   margin: 0;
   letter-spacing: 0.02em;
+}
+
+/* GitHub link with star button */
+.gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.gh:hover {
+  color: var(--text);
+}
+
+.gh:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.gh__mark {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.gh__star {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.gh:hover .gh__star {
+  border-color: var(--accent-strong);
+}
+
+.gh__star-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
+}
+
+.gh__stars {
+  display: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gh__stars--shown {
+  display: inline;
+  padding-left: 5px;
+  border-left: 1px solid var(--border);
 }
 
 .header h1 span {
@@ -298,7 +367,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-.result__chevron {
+.chevron {
   margin-left: auto;
   width: 10px;
   height: 10px;
@@ -309,8 +378,144 @@ body {
   flex-shrink: 0;
 }
 
-details[open] .result__chevron {
+details[open] .chevron {
   transform: rotate(45deg);
+}
+
+/* Mana and tap symbols: a gray disc with a dark glyph, as printed on cards, sized to the text. */
+.mana {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  background: #cbc5bd;
+  color: #1a1a1a;
+  box-shadow: -0.06em 0.06em 0 rgba(0, 0, 0, 0.45);
+  vertical-align: -0.2em;
+  margin: 0 0.06em;
+}
+
+.mana svg {
+  width: 0.78em;
+  height: 0.78em;
+  display: block;
+}
+
+/* Cards-in-deck menu */
+.card--deck {
+  padding: 0;
+}
+
+.deck__summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.deck__summary::-webkit-details-marker {
+  display: none;
+}
+
+.card--deck .deck__summary h2 {
+  margin: 0;
+}
+
+.deck__count {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.deck__body {
+  padding: 0 16px 14px;
+}
+
+.deck__body > .hint {
+  margin: 0 0 4px;
+}
+
+.deck__group {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin: 12px 0 2px;
+}
+
+.deck__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 14px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+}
+
+.deck__group + .check {
+  border-top: 0;
+}
+
+.check__label {
+  font-weight: 600;
+}
+
+.check input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.check__box {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev-2);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.check__box::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 3px;
+  width: 7px;
+  height: 13px;
+  border-right: 2.5px solid var(--accent-pale);
+  border-bottom: 2.5px solid var(--accent-pale);
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s;
+}
+
+.check input:checked + .check__box {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.check input:checked + .check__box::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.check input:focus-visible + .check__box {
+  outline: 2px solid var(--glow);
+  outline-offset: 2px;
 }
 
 .result__body {

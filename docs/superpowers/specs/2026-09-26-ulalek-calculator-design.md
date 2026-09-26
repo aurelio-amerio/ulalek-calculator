@@ -369,9 +369,12 @@ entries appear without UI changes.
    copier activations below.
 2. **Main spell**: two toggles, "Eldrazi spell" and "Colorless", both on by
    default.
-3. **Battlefield**: one stepper per static doubler (0 to `maxCount`) and
-   one toggle per activated copier, each showing its cost as a reminder
-   to deduct it. Notes from the data show as helper text.
+3. **Battlefield**: one stepper per static doubler (0 to `maxCount`, or a
+   toggle when `maxCount` is 1) and one toggle per activated copier. Each
+   card's printed oracle text is its helper text, with `{1}`, `{C}` and
+   `{T}` rendered as Magic-style symbols in gray discs. Only cards ticked in the "Cards in deck" menu appear;
+   a card that is unticked is also cleared from the input so it never
+   counts.
 4. **Cast in response**: one stepper, "Eldrazi spells cast in response",
    with helper text: any Eldrazi spell cast before a trigger resolves
    (Eldritch Immunity, Nameless Inversion, Dimensional Infiltrator);
@@ -381,13 +384,20 @@ entries appear without UI changes.
    it adds the numbered line of play, then the breakdown lines (triggers
    per cast and total, copy sources, payments, formula, leftover C) and
    any notes. Errors replace the number with the message.
-6. Reset button in the header. Footer with the known simplifications.
+6. **Cards in deck**: a collapsed card below "Cast in response" with a
+   checkbox per static doubler and activated copier, defaulting to Echoes
+   of Eternity and Abstruse Archaic, plus a "Reset deck" button that
+   restores that default. The header Reset button does not touch it.
+7. Reset button in the header. Footer with the known simplifications.
 
 Results update live on every input change. Inputs persist in localStorage
-and are restored on load.
+and are restored on load. The deck selection persists under its own
+localStorage key so it survives a reset of the inputs. The `{C}` symbol in
+the line of play, notes and breakdown renders as an inline mana icon.
 
-Visual direction: dark theme by default with a deep violet background and a
-pale accent, light theme when the system prefers it. System font stack so
+Visual direction: Eldrazi temple colours, a deep navy background with stone
+gray borders and parchment gold accents, parchment light theme when the
+system prefers it. System font stack so
 it works offline without font downloads. Generous spacing and large numerals
 so it reads at arm's length during a game. The line of play uses numbered
 steps with the card names emphasised so it can be read aloud.

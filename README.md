@@ -17,11 +17,18 @@ Live: https://aurelio-amerio.github.io/ulalek-calculator/
    colorless. Turn "Eldrazi" off for something like Mystic Forge, which only
    triggers Ulalek if you cast an Eldrazi spell in response.
 3. Set what is on the battlefield: Echoes of Eternity, Roaming Throne
-   (naming Eldrazi), Delney, and which copiers you will activate.
+   (naming Eldrazi), Delney, and which copiers you will activate. Only the
+   cards you have ticked under **Cards in deck** at the bottom of the page
+   are listed; by default that is Echoes of Eternity and Abstruse Archaic.
+   The selection is remembered between visits and only changes when you
+   tick a card or press **Reset deck** inside that menu.
 4. Set how many Eldrazi spells you cast in response (Eldritch Immunity,
    Nameless Inversion, Dimensional Infiltrator all count as one each).
 5. Tap the result bar at the bottom to expand the line of play and the
    breakdown.
+
+Each card's helper text is its printed oracle text. The GitHub link under
+the title shows the repository's star count when the app is online.
 
 The copy count assumes you spend all colorless mana on Ulalek's trigger and
 ignores mana produced by the copies themselves; anything that makes mana

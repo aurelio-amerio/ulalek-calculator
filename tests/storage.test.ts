@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultInput } from '../src/engine/input';
-import { STORAGE_KEY, loadInput, saveInput } from '../src/ui/storage';
+import { defaultDeck } from '../src/ui/deck';
+import { DECK_STORAGE_KEY, STORAGE_KEY, loadDeck, loadInput, saveDeck, saveInput } from '../src/ui/storage';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -41,5 +42,21 @@ describe('storage', () => {
     });
     expect(() => saveInput(defaultInput())).not.toThrow();
     expect(loadInput()).toBeNull();
+  });
+
+  it('round-trips the deck under its own key', () => {
+    const deck = { ...defaultDeck(), throne: true, echoes: false };
+    saveDeck(deck);
+    expect(loadDeck()).toEqual(deck);
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(DECK_STORAGE_KEY)).not.toBeNull();
+  });
+
+  it('returns null when no deck is saved and normalizes junk', () => {
+    expect(loadDeck()).toBeNull();
+    localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify({ echoes: 'yes', camera: true, bogus: true }));
+    expect(loadDeck()).toEqual({ echoes: false, throne: false, delney: false, archaic: false, resonator: false, camera: true });
+    localStorage.setItem(DECK_STORAGE_KEY, '[nope');
+    expect(loadDeck()).toBeNull();
   });
 });

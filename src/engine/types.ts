@@ -20,7 +20,8 @@ export interface StaticDoubler {
   copiesSpell?: Tag[];
   /** Upper bound offered by the UI. */
   maxCount: number;
-  note?: string;
+  /** Printed rules text, shown as the card's helper text. Mana symbols use `{1}` / `{T}` notation. */
+  oracle: string;
 }
 
 /** A "copy target ability" activation. One use per combo because it taps. */
@@ -31,7 +32,8 @@ export interface ActivatedCopier {
   costText: string;
   /** The copied ability's source must carry all of these tags. Empty means any source. */
   affectsSourceTags: Tag[];
-  note?: string;
+  /** Printed rules text, shown as the card's helper text. Mana symbols use `{1}` / `{T}` notation. */
+  oracle: string;
 }
 
 export interface MainSpell {
