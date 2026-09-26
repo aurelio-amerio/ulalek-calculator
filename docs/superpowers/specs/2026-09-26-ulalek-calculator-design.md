@@ -182,10 +182,10 @@ Order of operations the app prints (steps that do not apply are omitted):
 1. Cast S. Ulalek triggers `u` times; Echoes triggers `c` times. Put the
    Echoes triggers on the stack first, then the Ulalek triggers on top.
 2. With those triggers on the stack, activate each copier, targeting an
-   Echoes trigger (or, when there is none, a Ulalek trigger). Do not let
-   the response spell wait: cast it only after every copier is activated.
-3. Cast the response spell. Ulalek triggers `u` more times; put those on
-   top.
+   Echoes trigger (or, when there is none, a Ulalek trigger).
+3. Holding priority, cast the response spell in response, so that its
+   Ulalek triggers land above the copier abilities. Ulalek triggers `u`
+   more times; put those on top.
 4. Let the top Ulalek trigger resolve and pay {C}{C}. Put the spell copies
    on the stack, then the ability copies, with the Ulalek copies on top of
    the Echoes and copier copies.
