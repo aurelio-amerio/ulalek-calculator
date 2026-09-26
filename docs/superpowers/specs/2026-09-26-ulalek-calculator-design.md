@@ -17,9 +17,11 @@ designed so that new doublers can be added by editing one data file.
 ## What the user said
 
 - Ulalek is assumed to be on the battlefield.
-- Inputs: mana available after casting the spell to be copied, per color,
-  with colorless (C) the usual bottleneck; which trigger doublers are
-  available from this deck.
+- Inputs: the colorless mana (C) left after casting the spell to be
+  copied and after paying for anything else used in the combo (Archaic's
+  activation, an Eldrazi instant cast in response); which trigger doublers
+  are available from this deck. The app does not deduct any costs itself.
+  Colored mana never pays for Ulalek's trigger, so it is not an input.
 - An Eldrazi spell cast in response is a generic slot, not a specific card:
   Dimensional Infiltrator, Eldritch Immunity and Nameless Inversion
   (changeling, so it counts as Eldrazi) all fill the same role. It is one
@@ -41,7 +43,7 @@ designed so that new doublers can be added by editing one data file.
 
 | Decision | Choice |
 | --- | --- |
-| Mana model | Fixed budget entered by the user. Mana produced by the copies as they resolve is ignored (see Known simplifications). |
+| Mana model | Fixed C budget entered by the user, net of every cost already paid. The app deducts nothing. Mana produced by the copies as they resolve is ignored (see Known simplifications). |
 | Trigger input | Doublers and activated copiers come from a curated data file. Eldrazi spells cast in response are a plain count. |
 | Result screen | The number plus a short breakdown. |
 | Hosting | GitHub Pages, deployed by GitHub Actions on push to `main`. |
@@ -82,6 +84,8 @@ after the copied spells, so they sit on top and resolve first. Therefore:
    mana and tap. Each use adds one Ulalek trigger. Abstruse Archaic ({1},
    colorless sources only), Strionic Resonator ({2}), Peter Parker's Camera
    ({2} and a film counter). Because they tap, each gives one use per combo.
+   The user pays for them before entering the C total; the app only shows
+   the cost as a reminder.
 3. **Response spells**: another Eldrazi spell cast before any Ulalek trigger
    resolves. It triggers Ulalek again, and the new trigger is doubled by the
    static doublers just like the first one. The spell itself is also on the
@@ -123,9 +127,8 @@ Then, for a main spell with tags S:
   two Echoes this gives 2 + 2 = 4, matching the ruling.
 - `T = u * (1 if the main spell is an Eldrazi spell else 0) + u * (number of
   response spells) + (number of activated copiers used)`.
-- `Cleft` = colorless mana left after paying for the activated copiers (see
-  Mana payment).
-- `k = floor(Cleft / 2)` if `T >= 2`; `min(1, floor(Cleft / 2))` if `T = 1`;
+- `C` = the colorless mana entered by the user.
+- `k = floor(C / 2)` if `T >= 2`; `min(1, floor(C / 2))` if `T = 1`;
   `0` if `T = 0`.
 - **Copies of the main spell on the stack at the end** =
   `(1 + c(S)) * 2^k`. Duplicates = copies minus 1.
@@ -135,36 +138,24 @@ Then, for a main spell with tags S:
   the count is above 0.
 
 Worked examples (main spell is a colorless Eldrazi spell, C = 6 after
-casting it):
+paying for everything):
 
 | Setup | u | c | T | k | Copies |
 | --- | --- | --- | --- | --- | --- |
 | Nothing else | 1 | 0 | 1 | 1 | 2 |
-| Archaic (pays 1 generic from a colored source) | 1 | 0 | 2 | 3 | 8 |
+| Archaic (its {1} already paid) | 1 | 0 | 2 | 3 | 8 |
 | One Echoes | 2 | 1 | 2 | 3 | 16 |
 | Two Echoes | 3 | 4 | 3 | 3 | 40 |
 | One Echoes plus Roaming Throne | 3 | 1 | 3 | 3 | 16 |
 | One Eldrazi spell cast in response (its cost already deducted) | 1 | 0 | 2 | 3 | 8 |
 
-### Mana payment
+### Mana
 
-The pool is six non-negative integers: W, U, B, R, G, C, entered as the
-mana left after casting the main spell and any response spells. A cost is a
-number of generic symbols, a count per colored symbol, and a count of {C}
-symbols.
-
-The costs of the selected activated copiers are summed and paid before any
-doubling:
-
-1. Colored symbols are paid from the matching color. If any color is short,
-   the calculation fails and names the first unaffordable card.
-2. {C} symbols are paid from C. If short, same failure.
-3. Generic symbols are paid from leftover colored mana first, and from C
-   only when colored mana runs out. This preserves C for Ulalek. Since all
-   leftover colored mana has no other use, the choice of which color pays
-   generic does not matter and no search is needed.
-
-`Cleft` is what remains in C. Leftover mana of every color is reported.
+The only mana input is C, a non-negative integer: the colorless mana left
+after casting the main spell, any response spells, and any activated
+copiers. Ulalek's trigger costs {C}{C}, which only colorless mana can pay,
+so colored mana does not affect the result and is not entered. The app
+reports the leftover C (0 or 1) after the payments.
 
 ### Known simplifications
 
@@ -180,7 +171,8 @@ doubling:
   reported copy count ignores Echoes' copy trigger.
 - It That Heralds the End pumps Ulalek to 3/6, which turns Delney off. The
   Delney control carries a note saying so; the app does not detect it.
-- Activated copiers are one use each. Untap effects are not modelled.
+- Activated copiers are one use each and their cost is not deducted; the
+  user enters C net of it. Untap effects are not modelled.
 - Copies of a response spell are counted but nothing they do on resolution
   is modelled.
 
@@ -191,8 +183,6 @@ src/
   engine/
     cards.ts       card data: static doublers, activated copiers,
                    Ulalek's tags
-    mana.ts        ManaPool and ManaCost types, parse cost strings,
-                   pay(costs, pool) -> { ok, leftover } | { ok: false, card }
     calculate.ts   calculate(input) -> CalcResult (pure function)
     types.ts       shared types
   ui/
@@ -214,7 +204,7 @@ The engine has no DOM dependencies and is the only place the rules live.
 
 ```ts
 {
-  pool: { W, U, B, R, G, C }            // integers >= 0
+  colorless: number                     // integer >= 0, net of all costs
   mainSpell: { eldrazi: boolean; colorless: boolean }
   staticDoublers: Record<id, count>     // e.g. { echoes: 2, throne: 0 }
   activatedCopiers: Record<id, boolean>
@@ -233,13 +223,12 @@ The engine has no DOM dependencies and is the only place the rules live.
   totalTriggers: number     // T
   doublerCopies: number     // c(S)
   payments: number          // k
-  cLeftForUlalek: number
-  leftover: ManaPool
+  leftoverColorless: number // 0 or 1
   responseSpellCopies: number   // copies of each response spell, 0 if none
   notes: string[]           // e.g. "Single trigger: only one payment counts"
 } | {
   ok: false
-  error: string             // e.g. "Cannot pay for Strionic Resonator: needs 2 more mana"
+  error: string             // e.g. "Colorless mana must be a whole number"
 }
 ```
 
@@ -247,13 +236,12 @@ Card data shape (`cards.ts`):
 
 ```ts
 StaticDoubler   { id, name, tags, affects: Tag[], copiesSpell?: Tag[], maxCount, note? }
-ActivatedCopier { id, name, cost: string, affectsSourceTags: Tag[], note? }
+ActivatedCopier { id, name, costText: string, affectsSourceTags: Tag[], note? }
 ULALEK_TAGS     Tag[]
 ```
 
-Costs are strings in Scryfall notation, for example `"{1}{U}"` or
-`"{C}{C}"`, parsed by `mana.ts`. Adding a card means adding one object and
-one test.
+`costText` is display only, for example `"{1}, tap"`, shown as a reminder
+to deduct it. Adding a card means adding one object and one test.
 
 Initial data:
 
@@ -267,22 +255,23 @@ Initial data:
 Single screen, mobile first, generated from the card data so that new
 entries appear without UI changes.
 
-1. **Mana pool**: six steppers (W, U, B, R, G, C) with 48 px tap targets,
-   C shown first and emphasised. Label: "Mana left after casting your
-   spells". Helper text: the app pays for the copiers below.
+1. **Colorless mana**: one large stepper with 48 px tap targets and a
+   direct numeric field for big values. Label: "Colorless mana left".
+   Helper text: after casting the spell, any response spells, and any
+   copier activations below.
 2. **Main spell**: two toggles, "Eldrazi spell" and "Colorless", both on by
    default.
 3. **Battlefield**: one stepper per static doubler (0 to `maxCount`) and
-   one toggle per activated copier, each showing its cost. Notes from the
-   data show as helper text.
+   one toggle per activated copier, each showing its cost as a reminder
+   to deduct it. Notes from the data show as helper text.
 4. **Cast in response**: one stepper, "Eldrazi spells cast in response",
    with helper text: any Eldrazi spell cast before a trigger resolves
    (Eldritch Immunity, Nameless Inversion, Dimensional Infiltrator);
    subtract its cost from the mana above.
 5. **Result panel**, sticky at the bottom: the copy count in large type,
    duplicates beneath it, then the breakdown lines: triggers per cast and
-   total, doubler copies, mana spent and C left for Ulalek, number of
-   payments, the formula, leftover mana, and any notes. Errors replace the
+   total, doubler copies, number of CC payments, the formula, leftover C,
+   and any notes. Errors replace the
    number with the message.
 6. Reset button in the header. Footer with the known simplifications.
 
@@ -304,9 +293,8 @@ Workbox precaching of the built assets so the app opens offline. Vite
 ## Error handling
 
 The engine never throws on user input. Negative or non-integer mana is
-clamped by the UI steppers; the engine additionally validates and returns
-`ok: false` with a message. Unaffordable selections return the offending
-card name. The UI shows these inline in the result panel.
+clamped by the UI stepper; the engine additionally validates and returns
+`ok: false` with a message. The UI shows it inline in the result panel.
 
 ## Testing
 
@@ -317,10 +305,8 @@ Engine tests (Vitest):
   Echoes (9 copies), Echoes plus Throne, Delney alone, Throne alone.
 - Non-Eldrazi main spell with and without an Eldrazi response spell.
 - Non-colorless main spell with Echoes (no doubler copies).
-- Each activated copier and its cost.
-- An activated copier whose cost cannot be paid.
-- Generic paid from colored before C, and leftover reporting.
-- Odd C amounts, C = 0, C = 1 with two triggers.
+- Each activated copier adds exactly one trigger.
+- Odd C amounts and leftover reporting, C = 0, C = 1 with two triggers.
 - Response spell counts of 0, 1 and 2, and their reported copies.
 
 UI: a smoke test that renders the form from the data, sets a few inputs and
@@ -340,6 +326,7 @@ app from Chrome on Android ("Add to Home screen").
 - Simulating the stack step by step, or mana produced mid-combo.
 - Multiple rounds of the combo. Re-run the app with the new mana instead.
 - Editing card data inside the app.
-- Naming or costing individual response spells.
+- Deducting any cost. Naming or costing individual response spells.
+- Colored mana inputs.
 - Cost reducers and untap effects.
 - Any deck other than this one, beyond what the data file allows.
