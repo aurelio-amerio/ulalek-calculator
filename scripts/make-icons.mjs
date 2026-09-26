@@ -50,10 +50,10 @@ function png(size, pixel) {
   ]);
 }
 
-const VIOLET = [0x2a, 0x16, 0x50, 255];
-const RING_OUTER = [0x9d, 0x6b, 0xff, 255];
-const RING_INNER = [0xc9, 0xa6, 0xff, 255];
-const PUPIL = [0xf3, 0xea, 0xff, 255];
+const NAVY = [0x1a, 0x24, 0x31, 255];
+const RING_OUTER = [0xb8, 0x96, 0x4e, 255];
+const RING_INNER = [0xd6, 0xba, 0x79, 255];
+const PUPIL = [0xee, 0xf2, 0xf5, 255];
 const CLEAR = [0, 0, 0, 0];
 
 function eye(size, maskable) {
@@ -70,7 +70,7 @@ function eye(size, maskable) {
     if (d < 0.11) return PUPIL;
     if (d > 0.2 && d < 0.27) return RING_INNER;
     if (d > 0.33 && d < 0.36) return RING_OUTER;
-    return VIOLET;
+    return NAVY;
   };
 }
 

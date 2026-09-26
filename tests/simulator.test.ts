@@ -38,7 +38,7 @@ describe('closed form equals the simulator over a grid', () => {
   const cases: ReturnType<typeof mk>[] = [];
   for (let colorless = 0; colorless <= 10; colorless++)
     for (let echoes = 0; echoes <= 3; echoes++)
-      for (let throne = 0; throne <= 2; throne++)
+      for (let throne = 0; throne <= 1; throne++)
         for (let delney = 0; delney <= 1; delney++)
           for (let copiers = 0; copiers <= 3; copiers++)
             for (let responseSpells = 0; responseSpells <= 2; responseSpells++)

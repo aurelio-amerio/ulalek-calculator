@@ -12,8 +12,8 @@ export default defineConfig({
         short_name: 'Ulalek',
         description:
           'How many copies Ulalek, Fused Atrocity makes, and the order of play to get them.',
-        theme_color: '#1a1030',
-        background_color: '#120b22',
+        theme_color: '#1a2431',
+        background_color: '#111821',
         display: 'standalone',
         start_url: '/ulalek-calculator/',
         scope: '/ulalek-calculator/',

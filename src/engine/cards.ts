@@ -24,8 +24,8 @@ export const STATIC_DOUBLERS: StaticDoubler[] = [
     name: 'Roaming Throne',
     tags: ['colorless', 'artifact', 'creature', 'eldrazi'],
     affects: ['creature', 'eldrazi'],
-    maxCount: 2,
-    note: 'Naming Eldrazi. Only affects creatures, so it does not touch Echoes.',
+    maxCount: 1,
+    note: 'Naming Eldrazi. Only affects creatures, so it does not touch Echoes. A second Throne adds no copies.',
   },
   {
     id: 'delney',

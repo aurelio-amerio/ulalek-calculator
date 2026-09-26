@@ -171,18 +171,29 @@ function buildForm(input: CalcInput, onChange: () => void): HTMLElement[] {
     card(
       'Battlefield',
       ...STATIC_DOUBLERS.map((d) =>
-        stepper(
-          {
-            id: d.id,
-            label: d.name,
-            hint: d.note,
-            min: 0,
-            max: d.maxCount,
-            get: () => input.staticDoublers[d.id] ?? 0,
-            set: (n) => (input.staticDoublers[d.id] = n),
-          },
-          onChange,
-        ),
+        d.maxCount === 1
+          ? toggle(
+              {
+                id: d.id,
+                label: d.name,
+                hint: d.note,
+                get: () => (input.staticDoublers[d.id] ?? 0) > 0,
+                set: (b) => (input.staticDoublers[d.id] = b ? 1 : 0),
+              },
+              onChange,
+            )
+          : stepper(
+              {
+                id: d.id,
+                label: d.name,
+                hint: d.note,
+                min: 0,
+                max: d.maxCount,
+                get: () => input.staticDoublers[d.id] ?? 0,
+                set: (n) => (input.staticDoublers[d.id] = n),
+              },
+              onChange,
+            ),
       ),
       ...ACTIVATED_COPIERS.map((c) =>
         toggle(

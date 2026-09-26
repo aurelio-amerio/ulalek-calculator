@@ -337,7 +337,7 @@ to deduct it. Adding a card means adding one object and one test.
 
 Initial data:
 
-- Static doublers: Echoes of Eternity (max 3), Roaming Throne (max 2),
+- Static doublers: Echoes of Eternity (max 3), Roaming Throne (max 1),
   Delney, Streetwise Lookout (max 1).
 - Activated copiers: Abstruse Archaic, Strionic Resonator, Peter Parker's
   Camera.
@@ -421,7 +421,7 @@ Engine tests (Vitest):
 - Odd C amounts and leftover reporting, C = 0, C = 1 with two triggers.
 - Response spell counts of 0, 1 and 2, and their reported copies.
 - Grid test: `calculate` equals the simulator for C in 0..10, Echoes 0..3,
-  Throne 0..2, Delney 0..1, copiers 0..3, response spells 0..2, and both
+  Throne 0..1, Delney 0..1, copiers 0..3, response spells 0..2, and both
   main-spell toggles.
 - `describeLine` produces the expected step titles for: nothing else, one
   Echoes, Echoes with copier and response spell, copier with no Echoes,

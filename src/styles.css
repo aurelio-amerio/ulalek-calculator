@@ -1,31 +1,37 @@
 :root {
   color-scheme: dark light;
-  --bg: #120b22;
-  --bg-elev: #1d1335;
-  --bg-elev-2: #271a45;
-  --border: #3b2a66;
-  --text: #ece6fa;
-  --muted: #a999cc;
-  --accent: #c9a6ff;
-  --accent-strong: #9d6bff;
-  --danger: #ff8fa3;
+  /* Eldrazi temple palette: carved stone gray, deep navy, parchment gold
+   * and a faint pale glow. */
+  --bg: #111821;
+  --bg-elev: #1a2431;
+  --bg-elev-2: #26323f;
+  --border: #4c5866;
+  --text: #e8e3d7;
+  --muted: #9aa3ae;
+  --accent: #d6ba79;
+  --accent-strong: #b8964e;
+  --accent-pale: #f1dfae;
+  --glow: #bfe6f5;
+  --danger: #e6907f;
   --radius: 16px;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f6f2ff;
-    --bg-elev: #ffffff;
-    --bg-elev-2: #efe8ff;
-    --border: #d9cdf5;
-    --text: #1b1230;
-    --muted: #5e5280;
-    --accent: #6a3ddb;
-    --accent-strong: #5b2fd0;
-    --danger: #c0304f;
-    --shadow: 0 10px 30px rgba(60, 30, 120, 0.12);
+    --bg: #e6e0d2;
+    --bg-elev: #f4f0e6;
+    --bg-elev-2: #e2dbc9;
+    --border: #b3a888;
+    --text: #1d2531;
+    --muted: #5d6672;
+    --accent: #8a6d2f;
+    --accent-strong: #6f5622;
+    --accent-pale: #f6eed8;
+    --glow: #7fb2c7;
+    --danger: #a3372f;
+    --shadow: 0 10px 30px rgba(40, 32, 16, 0.18);
   }
 }
 
@@ -44,6 +50,13 @@ body {
 
 body {
   padding-bottom: 10rem;
+  min-height: 100vh;
+  background-image: radial-gradient(
+    ellipse 120% 40% at 50% -10%,
+    color-mix(in srgb, var(--glow) 14%, transparent),
+    transparent 70%
+  );
+  background-attachment: fixed;
 }
 
 .app {
@@ -167,7 +180,7 @@ body {
 }
 
 .stepper--big .stepper__value:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--glow);
   border-radius: 8px;
 }
 
@@ -200,8 +213,8 @@ body {
   left: 3px;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
   background: var(--muted);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
   transition: transform 0.15s, background 0.15s;
 }
 
@@ -212,11 +225,11 @@ body {
 
 .toggle input:checked + .toggle__track::after {
   transform: translateX(22px);
-  background: #fff;
+  background: var(--accent-pale);
 }
 
 .toggle input:focus-visible + .toggle__track {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--glow);
   outline-offset: 2px;
 }
 

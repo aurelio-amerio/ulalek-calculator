@@ -72,6 +72,19 @@ describe('app', () => {
     expect(text('result-copies')).toBe('8');
   });
 
+  it('renders single-copy doublers as switches', () => {
+    mountApp(root, defaultInput(), (i) => saved.push(i));
+    expect(() => q('toggle-throne')).not.toThrow();
+    expect(() => q('toggle-delney')).not.toThrow();
+    expect(root.querySelector('[data-testid="stepper-throne-inc"]')).toBeNull();
+    click('stepper-colorless-inc', 4);
+    setToggle('toggle-throne', true);
+    expect(saved.at(-1)?.staticDoublers.throne).toBe(1);
+    expect(text('result-copies')).toBe('4');
+    setToggle('toggle-throne', false);
+    expect(saved.at(-1)?.staticDoublers.throne).toBe(0);
+  });
+
   it('respects stepper bounds', () => {
     mountApp(root, defaultInput(), () => {});
     click('stepper-echoes-inc', 10);
